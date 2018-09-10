@@ -1,0 +1,68 @@
+# Copyright (c) 2015-2017 Contributors as noted in the AUTHORS file
+#
+# This file is part of Solo5, a unikernel base layer.
+#
+# Permission to use, copy, modify, and/or distribute this software
+# for any purpose with or without fee is hereby granted, provided
+# that the above copyright notice and this permission notice appear
+# in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+# WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+# AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR
+# CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+# OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+# NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+# CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+TOP?=../..
+include $(TOP)/Makefile.common
+
+.PHONY: ukvm
+ukvm: $(UKVM_TARGETS)
+
+
+
+SOLO5_DIR=$(TOP)/kernel
+UKVM_SRC=$(TOP)/ukvm
+
+CFLAGS+=-I$(SOLO5_DIR)
+
+%.o: %.c $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@
+.PRECIOUS: %.o
+
+ifeq ($(BUILD_UKVM), yes)
+Makefile.ukvm: $(UKVM_SRC)/ukvm-configure
+	$(UKVM_SRC)/ukvm-configure $(UKVM_SRC) $(UKVM_MODULES)
+
+-include Makefile.ukvm
+
+%.ukvm: %.o $(SOLO5_DIR)/ukvm/solo5.lds $(SOLO5_DIR)/ukvm/solo5.o
+	$(LD) -T $(SOLO5_DIR)/ukvm/solo5.lds \
+			 $(LDFLAGS) -o $@ $(SOLO5_DIR)/ukvm/solo5.o $< $(LDLIBS)
+
+$(SOLO5_DIR)/ukvm/solo5.o: 
+	$(MAKE) -C $(SOLO5_DIR) ukvm
+endif
+
+ifeq ($(BUILD_MUEN), yes)
+%.muen: %.o $(SOLO5_DIR)/ukvm/solo5.lds $(SOLO5_DIR)/muen/solo5.o
+	$(LD) -T $(SOLO5_DIR)/ukvm/solo5.lds \
+			 $(LDFLAGS) -o $@ $(SOLO5_DIR)/muen/solo5.o $< $(LDLIBS)
+
+$(SOLO5_DIR)/muen/solo5.o:
+	$(MAKE) -C $(SOLO5_DIR) muen
+endif
+
+%.virtio: %.o $(SOLO5_DIR)/virtio/solo5.lds $(SOLO5_DIR)/virtio/solo5.o
+	$(LD) -T $(SOLO5_DIR)/virtio/solo5.lds \
+			 $(LDFLAGS) -o $@ $(SOLO5_DIR)/virtio/solo5.o $< $(LDLIBS)
+
+$(SOLO5_DIR)/virtio/solo5.o: 
+	$(MAKE) -C $(SOLO5_DIR) virtio
+
+.PHONY: clean ukvm-clean
+clean: ukvm-clean
+	$(RM) *.o $(UKVM_TARGETS) Makefile.ukvm $(VIRTIO_TARGETS)

@@ -1,0 +1,31 @@
+
+/* Enclave.edl - Top EDL file. */
+
+enclave {
+     from "sgx_tstdc.edl" import sgx_thread_wait_untrusted_event_ocall, sgx_thread_set_untrusted_event_ocall, sgx_thread_setwait_untrusted_events_ocall, sgx_thread_set_multiple_untrusted_events_ocall;
+	//from "sgx_tae_service.edl" import *;
+
+
+    trusted {
+        public void ecall_test(int val);
+        public int init_private_disk(void);
+        public int tfs_test(void);
+        public void ecall_init_blk(void);
+        public int ecall_write_blk([user_check]const void* buf,unsigned long long buf_size );
+        public int ecall_read_blk( [user_check]void* buf,unsigned long long buf_size );
+        public int ecall_seek(void);
+       
+     };
+    untrusted {
+
+        //IO interfaces
+           void ocall_print_string([in, string] const char *str);
+           int ocall_close(int fd);
+           int ocall_open_short([in, string]const char* pathname, int flags);
+
+
+
+
+    };
+
+};
