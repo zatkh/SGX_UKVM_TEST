@@ -1,6 +1,7 @@
 #include "enclave_t.h"
 
 #include "sgx_trts.h" /* for sgx_ocalloc, sgx_is_outside_enclave */
+#include "sgx_lfence.h" /* for sgx_lfence */
 
 #include <errno.h>
 #include <string.h> /* for memcpy etc */
@@ -85,15 +86,13 @@ typedef struct ms_sgx_thread_set_multiple_untrusted_events_ocall_t {
 static sgx_status_t SGX_CDECL sgx_ecall_test(void* pms)
 {
 	CHECK_REF_POINTER(pms, sizeof(ms_ecall_test_t));
-	ms_ecall_test_t* ms = SGX_CAST(ms_ecall_test_t*, pms);
-	sgx_status_t status = SGX_SUCCESS;
-
-
-
 	//
 	// fence after pointer checks
 	//
-	__builtin_ia32_lfence();
+	sgx_lfence();
+	ms_ecall_test_t* ms = SGX_CAST(ms_ecall_test_t*, pms);
+	sgx_status_t status = SGX_SUCCESS;
+
 
 
 	ecall_test(ms->ms_val);
@@ -105,15 +104,13 @@ static sgx_status_t SGX_CDECL sgx_ecall_test(void* pms)
 static sgx_status_t SGX_CDECL sgx_init_private_disk(void* pms)
 {
 	CHECK_REF_POINTER(pms, sizeof(ms_init_private_disk_t));
-	ms_init_private_disk_t* ms = SGX_CAST(ms_init_private_disk_t*, pms);
-	sgx_status_t status = SGX_SUCCESS;
-
-
-
 	//
 	// fence after pointer checks
 	//
-	__builtin_ia32_lfence();
+	sgx_lfence();
+	ms_init_private_disk_t* ms = SGX_CAST(ms_init_private_disk_t*, pms);
+	sgx_status_t status = SGX_SUCCESS;
+
 
 
 	ms->ms_retval = init_private_disk();
@@ -125,15 +122,13 @@ static sgx_status_t SGX_CDECL sgx_init_private_disk(void* pms)
 static sgx_status_t SGX_CDECL sgx_tfs_test(void* pms)
 {
 	CHECK_REF_POINTER(pms, sizeof(ms_tfs_test_t));
-	ms_tfs_test_t* ms = SGX_CAST(ms_tfs_test_t*, pms);
-	sgx_status_t status = SGX_SUCCESS;
-
-
-
 	//
 	// fence after pointer checks
 	//
-	__builtin_ia32_lfence();
+	sgx_lfence();
+	ms_tfs_test_t* ms = SGX_CAST(ms_tfs_test_t*, pms);
+	sgx_status_t status = SGX_SUCCESS;
+
 
 
 	ms->ms_retval = tfs_test();
@@ -153,16 +148,14 @@ static sgx_status_t SGX_CDECL sgx_ecall_init_blk(void* pms)
 static sgx_status_t SGX_CDECL sgx_ecall_write_blk(void* pms)
 {
 	CHECK_REF_POINTER(pms, sizeof(ms_ecall_write_blk_t));
+	//
+	// fence after pointer checks
+	//
+	sgx_lfence();
 	ms_ecall_write_blk_t* ms = SGX_CAST(ms_ecall_write_blk_t*, pms);
 	sgx_status_t status = SGX_SUCCESS;
 	void* _tmp_buf = ms->ms_buf;
 
-
-
-	//
-	// fence after pointer checks
-	//
-	__builtin_ia32_lfence();
 
 
 	ms->ms_retval = ecall_write_blk((const void*)_tmp_buf, ms->ms_buf_size);
@@ -174,16 +167,14 @@ static sgx_status_t SGX_CDECL sgx_ecall_write_blk(void* pms)
 static sgx_status_t SGX_CDECL sgx_ecall_read_blk(void* pms)
 {
 	CHECK_REF_POINTER(pms, sizeof(ms_ecall_read_blk_t));
+	//
+	// fence after pointer checks
+	//
+	sgx_lfence();
 	ms_ecall_read_blk_t* ms = SGX_CAST(ms_ecall_read_blk_t*, pms);
 	sgx_status_t status = SGX_SUCCESS;
 	void* _tmp_buf = ms->ms_buf;
 
-
-
-	//
-	// fence after pointer checks
-	//
-	__builtin_ia32_lfence();
 
 
 	ms->ms_retval = ecall_read_blk(_tmp_buf, ms->ms_buf_size);
@@ -195,15 +186,13 @@ static sgx_status_t SGX_CDECL sgx_ecall_read_blk(void* pms)
 static sgx_status_t SGX_CDECL sgx_ecall_seek(void* pms)
 {
 	CHECK_REF_POINTER(pms, sizeof(ms_ecall_seek_t));
-	ms_ecall_seek_t* ms = SGX_CAST(ms_ecall_seek_t*, pms);
-	sgx_status_t status = SGX_SUCCESS;
-
-
-
 	//
 	// fence after pointer checks
 	//
-	__builtin_ia32_lfence();
+	sgx_lfence();
+	ms_ecall_seek_t* ms = SGX_CAST(ms_ecall_seek_t*, pms);
+	sgx_status_t status = SGX_SUCCESS;
+
 
 
 	ms->ms_retval = ecall_seek();
@@ -277,7 +266,8 @@ sgx_status_t SGX_CDECL ocall_print_string(const char* str)
 	
 	status = sgx_ocall(0, ms);
 
-
+	if (status == SGX_SUCCESS) {
+	}
 	sgx_ocfree();
 	return status;
 }
@@ -302,8 +292,9 @@ sgx_status_t SGX_CDECL ocall_close(int* retval, int fd)
 	ms->ms_fd = fd;
 	status = sgx_ocall(1, ms);
 
-	if (retval) *retval = ms->ms_retval;
-
+	if (status == SGX_SUCCESS) {
+		if (retval) *retval = ms->ms_retval;
+	}
 	sgx_ocfree();
 	return status;
 }
@@ -341,8 +332,9 @@ sgx_status_t SGX_CDECL ocall_open_short(int* retval, const char* pathname, int f
 	ms->ms_flags = flags;
 	status = sgx_ocall(2, ms);
 
-	if (retval) *retval = ms->ms_retval;
-
+	if (status == SGX_SUCCESS) {
+		if (retval) *retval = ms->ms_retval;
+	}
 	sgx_ocfree();
 	return status;
 }
@@ -367,8 +359,9 @@ sgx_status_t SGX_CDECL sgx_thread_wait_untrusted_event_ocall(int* retval, const 
 	ms->ms_self = SGX_CAST(void*, self);
 	status = sgx_ocall(3, ms);
 
-	if (retval) *retval = ms->ms_retval;
-
+	if (status == SGX_SUCCESS) {
+		if (retval) *retval = ms->ms_retval;
+	}
 	sgx_ocfree();
 	return status;
 }
@@ -393,8 +386,9 @@ sgx_status_t SGX_CDECL sgx_thread_set_untrusted_event_ocall(int* retval, const v
 	ms->ms_waiter = SGX_CAST(void*, waiter);
 	status = sgx_ocall(4, ms);
 
-	if (retval) *retval = ms->ms_retval;
-
+	if (status == SGX_SUCCESS) {
+		if (retval) *retval = ms->ms_retval;
+	}
 	sgx_ocfree();
 	return status;
 }
@@ -420,8 +414,9 @@ sgx_status_t SGX_CDECL sgx_thread_setwait_untrusted_events_ocall(int* retval, co
 	ms->ms_self = SGX_CAST(void*, self);
 	status = sgx_ocall(5, ms);
 
-	if (retval) *retval = ms->ms_retval;
-
+	if (status == SGX_SUCCESS) {
+		if (retval) *retval = ms->ms_retval;
+	}
 	sgx_ocfree();
 	return status;
 }
@@ -459,8 +454,9 @@ sgx_status_t SGX_CDECL sgx_thread_set_multiple_untrusted_events_ocall(int* retva
 	ms->ms_total = total;
 	status = sgx_ocall(6, ms);
 
-	if (retval) *retval = ms->ms_retval;
-
+	if (status == SGX_SUCCESS) {
+		if (retval) *retval = ms->ms_retval;
+	}
 	sgx_ocfree();
 	return status;
 }

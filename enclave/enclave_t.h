@@ -15,7 +15,6 @@
 extern "C" {
 #endif
 
-
 void ecall_test(int val);
 int init_private_disk();
 int tfs_test();

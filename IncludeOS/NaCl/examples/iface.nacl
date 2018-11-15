@@ -1,0 +1,52 @@
+Iface eth0 {
+	index: 			0,
+	address: 		10.0.0.45,
+	netmask: 		255.255.255.0,
+	gateway: 		10.0.0.1,
+	dns: 			8.8.8.8,
+	prerouting: 	my_filter,
+	input: 			my_filter,
+	output: 		my_filter,
+	postrouting:	my_filter,
+	masquerade: 	true
+}
+
+Iface eth1 {
+	index: 1,
+	config: dhcp-with-fallback	
+}
+
+eth1.address: 		10.0.0.50
+eth1.netmask: 		255.255.255.0
+eth1.gateway: 		10.0.0.1
+eth1.dns: 			8.8.8.8
+eth1.prerouting: 	my_filter
+eth1.input: 		my_filter
+eth1.output: 		my_filter
+eth1.postrouting: 	my_filter
+eth1.masquerade: 	true
+
+Filter::IP my_filter {
+	accept
+}
+
+Iface my_vlan0 {
+	index: 0,
+	vlan: 10,
+	address: 10.10.10.10,
+	netmask: 255.255.255.0
+}
+
+Iface my_vlan1 {
+	index: 1,
+	vlan: 10,
+	address: 10.10.10.10,
+	netmask: 255.255.255.0
+}
+
+Iface my_other_vlan {
+	index: 1,
+	vlan: 20,
+	address: 10.20.10.10,
+	netmask: 255.255.255.0
+}

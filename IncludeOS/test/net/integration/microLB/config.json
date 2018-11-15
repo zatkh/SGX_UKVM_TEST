@@ -1,0 +1,39 @@
+{
+  "net" : [
+    {
+      "iface": 0,
+      "config": "static",
+      "address": "10.0.0.68",
+      "netmask": "255.255.255.0",
+      "gateway": "10.0.0.1"
+    },
+    {
+      "iface": 1,
+      "config": "static",
+      "address": "10.0.0.69",
+      "netmask": "255.255.255.0",
+      "gateway": "10.0.0.1"
+    }
+  ],
+
+  "load_balancer" : {
+    "clients" : {
+      "iface" : 0,
+      "port" : 443,
+      "waitq_limit"   : 1000,
+      "session_limit" : 1000,
+      "certificate": "/test.pem",
+      "key":         "/test.key"
+    },
+    "nodes" : {
+      "iface" : 1,
+      "algo" : "round_robin",
+      "list" : [
+        ["10.0.0.1", 6001],
+        ["10.0.0.1", 6002],
+        ["10.0.0.1", 6003],
+        ["10.0.0.1", 6004]
+      ]
+    }
+  }
+}
